@@ -1,0 +1,279 @@
+class No {
+
+    public int elemento;
+    public No esq;
+    public No dir;
+    public boolean cor;
+
+    public No(int elemento) {
+
+        this.elemento = elemento;
+        this.cor = false;
+        this.esq = null;
+        this.dir = null;
+    }
+
+    public boolean isNoTipo4() {
+
+        return esq != null &&
+               dir != null &&
+               esq.cor &&
+               dir.cor;
+    }
+}
+
+public class ArvoreBicolor {
+
+    private No raiz;
+
+    public ArvoreBicolor() { //Cor
+        raiz = null;
+    }
+
+    public boolean pesquisar(int x) {
+        return pesquisar(x, raiz);
+    }
+
+    private boolean pesquisar(int x, No i) {
+
+        if (i == null) {
+            return false;
+        }
+
+        if (x == i.elemento) {
+            return true;
+        }
+
+        if (x < i.elemento) {
+            return pesquisar(x, i.esq);
+        }
+
+        return pesquisar(x, i.dir);
+    }
+
+    public void caminharCentral() {
+        caminharCentral(raiz);
+        System.out.println();
+    }
+
+    private void caminharCentral(No i) {
+
+        if (i != null) {
+
+            caminharCentral(i.esq);
+
+            System.out.print(
+                i.elemento +
+                "(cor=" +
+                (i.cor ? 1 : 0) +
+                ") "
+            );
+
+            caminharCentral(i.dir);
+        }
+    }
+
+    // FRAGMENTAÇÃO (RECOLORAÇÃO)
+
+    private void fragmentar(No i) {
+
+        i.cor = true;
+
+        if (i.esq != null) {
+            i.esq.cor = false;
+        }
+
+        if (i.dir != null) {
+            i.dir.cor = false;
+        }
+
+        if (i == raiz) {
+            i.cor = false;
+        }
+    }
+
+    // ROTAÇÕES
+
+    private No rotacaoEsq(No no) {
+
+        No dir = no.dir;
+
+        no.dir = dir.esq;
+        dir.esq = no;
+
+        return dir;
+    }
+
+    private No rotacaoDir(No no) {
+
+        No esq = no.esq;
+
+        no.esq = esq.dir;
+        esq.dir = no;
+
+        return esq;
+    }
+
+    private No rotacaoDirEsq(No no) {
+
+        no.dir = rotacaoDir(no.dir);
+        return rotacaoEsq(no);
+    }
+
+    private No rotacaoEsqDir(No no) {
+
+        no.esq = rotacaoEsq(no.esq);
+        return rotacaoDir(no);
+    }
+
+    // BALANCEAMENTO
+
+    private void balancear(
+        No bisavo,
+        No avo,
+        No pai,
+        No i) {
+
+        No novo;
+
+        if (pai.elemento > avo.elemento) {
+
+            if (i.elemento > pai.elemento) {
+                novo = rotacaoEsq(avo);
+            } else {
+                novo = rotacaoDirEsq(avo);
+            }
+
+        } else {
+
+            if (i.elemento < pai.elemento) {
+                novo = rotacaoDir(avo);
+            } else {
+                novo = rotacaoEsqDir(avo);
+            }
+        }
+
+        if (bisavo == null) {
+
+            raiz = novo;
+
+        } else if (novo.elemento < bisavo.elemento) {
+
+            bisavo.esq = novo;
+
+        } else {
+
+            bisavo.dir = novo;
+        }
+
+        novo.cor = false;
+
+        if (novo.esq != null) {
+            novo.esq.cor = true;
+        }
+
+        if (novo.dir != null) {
+            novo.dir.cor = true;
+        }
+    }
+
+    // INSERCAO PUBLICA
+
+
+    public void inserir(int x) throws Exception {
+
+        if (raiz == null) {
+
+            raiz = new No(x);
+            raiz.cor = false;
+
+        } else {
+
+            inserir(
+                x,
+                null,
+                null,
+                null,
+                raiz
+            );
+        }
+
+        raiz.cor = false;
+    }
+
+    // INSERCAO RECURSIVA
+
+
+    private void inserir(
+        int x,
+        No bisavo,
+        No avo,
+        No pai,
+        No i) throws Exception {
+
+        if (i == null) {
+
+            No novo = new No(x);
+            novo.cor = true;
+
+            if (x < pai.elemento) {
+                pai.esq = novo;
+            } else {
+                pai.dir = novo;
+            }
+
+            if (pai.cor) {
+                balancear(
+                    bisavo,
+                    avo,
+                    pai,
+                    novo
+                );
+            }
+
+        } else {
+
+            if (i.isNoTipo4()) {
+
+                fragmentar(i);
+
+                if (pai != null && pai.cor) {
+
+                    balancear(
+                        bisavo,
+                        avo,
+                        pai,
+                        i
+                    );
+                }
+            }
+
+            if (x < i.elemento) {
+
+                inserir(
+                    x,
+                    avo,
+                    pai,
+                    i,
+                    i.esq
+                );
+
+            } else if (x > i.elemento) {
+
+                inserir(
+                    x,
+                    avo,
+                    pai,
+                    i,
+                    i.dir
+                );
+
+            } else {
+
+                throw new Exception(
+                    "Erro ao inserir!"
+                );
+            }
+        }
+    }
+}
